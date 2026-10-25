@@ -1,0 +1,124 @@
+`timescale 1ns/1ps
+
+module riscv_bus_architecture (
+    input wire clk,
+    input wire reset,
+
+    // IF/ID bus
+    input wire [31:0] if_pc_in,
+    input wire [31:0] if_instr_in,
+    output reg [31:0] id_pc,
+    output reg [31:0] id_instr,
+
+    // ID/EX bus
+    input wire [31:0] id_rs1_in,
+    input wire [31:0] id_rs2_in,
+    input wire [31:0] id_imm_in,
+    input wire [4:0]  id_rd_in,
+    input wire        id_regwrite_in,
+    input wire        id_memread_in,
+    input wire        id_memwrite_in,
+    input wire        id_memtoreg_in,
+    output reg [31:0] ex_rs1,
+    output reg [31:0] ex_rs2,
+    output reg [31:0] ex_imm,
+    output reg [4:0]  ex_rd,
+    output reg        ex_regwrite,
+    output reg        ex_memread,
+    output reg        ex_memwrite,
+    output reg        ex_memtoreg,
+
+    // EX/MEM bus
+    input wire [31:0] ex_alu_result_in,
+    input wire [31:0] ex_store_data_in,
+    input wire [4:0]  ex_rd_in,
+    input wire        ex_regwrite_in,
+    input wire        ex_memread_in,
+    input wire        ex_memwrite_in,
+    input wire        ex_memtoreg_in,
+    output reg [31:0] mem_alu_result,
+    output reg [31:0] mem_store_data,
+    output reg [4:0]  mem_rd,
+    output reg        mem_regwrite,
+    output reg        mem_memread,
+    output reg        mem_memwrite,
+    output reg        mem_memtoreg,
+
+    // MEM/WB bus
+    input wire [31:0] mem_alu_result_in,
+    input wire [31:0] mem_read_data_in,
+    input wire [4:0]  mem_rd_in,
+    input wire        mem_regwrite_in,
+    input wire        mem_memtoreg_in,
+    output reg [31:0] wb_alu_result,
+    output reg [31:0] wb_read_data,
+    output reg [4:0]  wb_rd,
+    output reg        wb_regwrite,
+    output reg        wb_memtoreg
+);
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            // IF/ID
+            id_pc <= 0;
+            id_instr <= 0;
+
+            // ID/EX
+            ex_rs1 <= 0;
+            ex_rs2 <= 0;
+            ex_imm <= 0;
+            ex_rd <= 0;
+            ex_regwrite <= 0;
+            ex_memread <= 0;
+            ex_memwrite <= 0;
+            ex_memtoreg <= 0;
+
+            // EX/MEM
+            mem_alu_result <= 0;
+            mem_store_data <= 0;
+            mem_rd <= 0;
+            mem_regwrite <= 0;
+            mem_memread <= 0;
+            mem_memwrite <= 0;
+            mem_memtoreg <= 0;
+
+            // MEM/WB
+            wb_alu_result <= 0;
+            wb_read_data <= 0;
+            wb_rd <= 0;
+            wb_regwrite <= 0;
+            wb_memtoreg <= 0;
+        end else begin
+            // IF/ID: instruction fetch -> decode
+            id_pc <= if_pc_in;
+            id_instr <= if_instr_in;
+
+            // ID/EX: decode -> execute
+            ex_rs1 <= id_rs1_in;
+            ex_rs2 <= id_rs2_in;
+            ex_imm <= id_imm_in;
+            ex_rd <= id_rd_in;
+            ex_regwrite <= id_regwrite_in;
+            ex_memread <= id_memread_in;
+            ex_memwrite <= id_memwrite_in;
+            ex_memtoreg <= id_memtoreg_in;
+
+            // EX/MEM: execute -> memory
+            mem_alu_result <= ex_alu_result_in;
+            mem_store_data <= ex_store_data_in;
+            mem_rd <= ex_rd_in;
+            mem_regwrite <= ex_regwrite_in;
+            mem_memread <= ex_memread_in;
+            mem_memwrite <= ex_memwrite_in;
+            mem_memtoreg <= ex_memtoreg_in;
+
+            // MEM/WB: memory -> write-back
+            wb_alu_result <= mem_alu_result_in;
+            wb_read_data <= mem_read_data_in;
+            wb_rd <= mem_rd_in;
+            wb_regwrite <= mem_regwrite_in;
+            wb_memtoreg <= mem_memtoreg_in;
+        end
+    end
+
+endmodule
