@@ -1,0 +1,212 @@
+`timescale 1ns/1ps
+
+module tb_riscv_bus_architecture;
+
+    reg clk = 0;
+    reg reset = 1;
+
+    // IF/ID
+    reg [31:0] if_pc_in, if_instr_in;
+    wire [31:0] id_pc, id_instr;
+
+    // ID/EX
+    reg [31:0] id_rs1_in, id_rs2_in, id_imm_in;
+    reg [4:0] id_rd_in;
+    reg id_regwrite_in, id_memread_in;
+    reg id_memwrite_in, id_memtoreg_in;
+
+    wire [31:0] ex_rs1, ex_rs2, ex_imm;
+    wire [4:0] ex_rd;
+    wire ex_regwrite, ex_memread;
+    wire ex_memwrite, ex_memtoreg;
+
+    // EX/MEM
+    reg [31:0] ex_alu_result_in, ex_store_data_in;
+    reg [4:0] ex_rd_in;
+    reg ex_regwrite_in, ex_memread_in;
+    reg ex_memwrite_in, ex_memtoreg_in;
+
+    wire [31:0] mem_alu_result, mem_store_data;
+    wire [4:0] mem_rd;
+    wire mem_regwrite, mem_memread;
+    wire mem_memwrite, mem_memtoreg;
+
+    // MEM/WB
+    reg [31:0] mem_alu_result_in, mem_read_data_in;
+    reg [4:0] mem_rd_in;
+    reg mem_regwrite_in, mem_memtoreg_in;
+
+    wire [31:0] wb_alu_result, wb_read_data;
+    wire [4:0] wb_rd;
+    wire wb_regwrite, wb_memtoreg;
+
+    // Device under test
+    riscv_bus_architecture dut (
+        .clk(clk), .reset(reset),
+
+        .if_pc_in(if_pc_in),
+        .if_instr_in(if_instr_in),
+        .id_pc(id_pc), .id_instr(id_instr),
+
+        .id_rs1_in(id_rs1_in),
+        .id_rs2_in(id_rs2_in),
+        .id_imm_in(id_imm_in),
+        .id_rd_in(id_rd_in),
+        .id_regwrite_in(id_regwrite_in),
+        .id_memread_in(id_memread_in),
+        .id_memwrite_in(id_memwrite_in),
+        .id_memtoreg_in(id_memtoreg_in),
+
+        .ex_rs1(ex_rs1), .ex_rs2(ex_rs2),
+        .ex_imm(ex_imm), .ex_rd(ex_rd),
+        .ex_regwrite(ex_regwrite),
+        .ex_memread(ex_memread),
+        .ex_memwrite(ex_memwrite),
+        .ex_memtoreg(ex_memtoreg),
+
+        .ex_alu_result_in(ex_alu_result_in),
+        .ex_store_data_in(ex_store_data_in),
+        .ex_rd_in(ex_rd_in),
+        .ex_regwrite_in(ex_regwrite_in),
+        .ex_memread_in(ex_memread_in),
+        .ex_memwrite_in(ex_memwrite_in),
+        .ex_memtoreg_in(ex_memtoreg_in),
+
+        .mem_alu_result(mem_alu_result),
+        .mem_store_data(mem_store_data),
+        .mem_rd(mem_rd),
+        .mem_regwrite(mem_regwrite),
+        .mem_memread(mem_memread),
+        .mem_memwrite(mem_memwrite),
+        .mem_memtoreg(mem_memtoreg),
+
+        .mem_alu_result_in(mem_alu_result_in),
+        .mem_read_data_in(mem_read_data_in),
+        .mem_rd_in(mem_rd_in),
+        .mem_regwrite_in(mem_regwrite_in),
+        .mem_memtoreg_in(mem_memtoreg_in),
+
+        .wb_alu_result(wb_alu_result),
+        .wb_read_data(wb_read_data),
+        .wb_rd(wb_rd),
+        .wb_regwrite(wb_regwrite),
+        .wb_memtoreg(wb_memtoreg)
+    );
+
+    always #5 clk = ~clk;
+
+    initial begin
+        // Initialize inputs
+        if_pc_in = 0;
+        if_instr_in = 0;
+
+        id_rs1_in = 0;
+        id_rs2_in = 0;
+        id_imm_in = 0;
+        id_rd_in = 0;
+        id_regwrite_in = 0;
+        id_memread_in = 0;
+        id_memwrite_in = 0;
+        id_memtoreg_in = 0;
+
+        ex_alu_result_in = 0;
+        ex_store_data_in = 0;
+        ex_rd_in = 0;
+        ex_regwrite_in = 0;
+        ex_memread_in = 0;
+        ex_memwrite_in = 0;
+        ex_memtoreg_in = 0;
+
+        mem_alu_result_in = 0;
+        mem_read_data_in = 0;
+        mem_rd_in = 0;
+        mem_regwrite_in = 0;
+        mem_memtoreg_in = 0;
+
+        // Check reset
+        repeat (2) @(negedge clk);
+        #1;
+        if (id_pc !== 0 || id_instr !== 0 ||
+            ex_rs1 !== 0 || mem_alu_result !== 0 ||
+            wb_alu_result !== 0)
+            $fatal(1, "RESET TEST FAILED");
+
+        reset = 0;
+
+        // Apply test data before the next rising edge
+        @(negedge clk);
+
+        if_pc_in = 32'h00000004;
+        if_instr_in = 32'h00500093;
+
+        id_rs1_in = 32'd10;
+        id_rs2_in = 32'd20;
+        id_imm_in = 32'd5;
+        id_rd_in = 5'd3;
+        id_regwrite_in = 1;
+        id_memread_in = 1;
+        id_memwrite_in = 0;
+        id_memtoreg_in = 1;
+
+        ex_alu_result_in = 32'd30;
+        ex_store_data_in = 32'd20;
+        ex_rd_in = 5'd4;
+        ex_regwrite_in = 1;
+        ex_memread_in = 0;
+        ex_memwrite_in = 1;
+        ex_memtoreg_in = 0;
+
+        mem_alu_result_in = 32'd30;
+        mem_read_data_in = 32'd100;
+        mem_rd_in = 5'd5;
+        mem_regwrite_in = 1;
+        mem_memtoreg_in = 1;
+
+        // Rising edge captures all bus inputs
+        @(posedge clk);
+        #1;
+
+        // Verify IF/ID
+        if (id_pc !== 32'd4 ||
+            id_instr !== 32'h00500093)
+            $fatal(1, "IF/ID BUS TEST FAILED");
+
+        // Verify ID/EX
+        if (ex_rs1 !== 32'd10 ||
+            ex_rs2 !== 32'd20 ||
+            ex_imm !== 32'd5 ||
+            ex_rd !== 5'd3 ||
+            ex_regwrite !== 1 ||
+            ex_memread !== 1)
+            $fatal(1, "ID/EX BUS TEST FAILED");
+
+        // Verify EX/MEM
+        if (mem_alu_result !== 32'd30 ||
+            mem_store_data !== 32'd20 ||
+            mem_rd !== 5'd4 ||
+            mem_memwrite !== 1)
+            $fatal(1, "EX/MEM BUS TEST FAILED");
+
+        // Verify MEM/WB
+        if (wb_alu_result !== 32'd30 ||
+            wb_read_data !== 32'd100 ||
+            wb_rd !== 5'd5 ||
+            wb_regwrite !== 1 ||
+            wb_memtoreg !== 1)
+            $fatal(1, "MEM/WB BUS TEST FAILED");
+
+        $display("----------------------------------");
+        $display("All pipeline bus tests PASSED");
+        $display("IF/ID   : PC = %0d", id_pc);
+        $display("ID/EX   : RS1 = %0d, RS2 = %0d",
+                 ex_rs1, ex_rs2);
+        $display("EX/MEM  : ALU result = %0d",
+                 mem_alu_result);
+        $display("MEM/WB  : Read data = %0d",
+                 wb_read_data);
+        $display("----------------------------------");
+
+        $finish;
+    end
+
+endmodule
